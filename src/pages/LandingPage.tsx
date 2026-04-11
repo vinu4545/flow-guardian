@@ -44,7 +44,7 @@ export default function LandingPage() {
         </div>
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <Link to="/dashboard">
+          <Link to="/auth">
             <GradientButton size="sm">Enter Dashboard</GradientButton>
           </Link>
         </div>
