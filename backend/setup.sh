@@ -1,19 +1,13 @@
 #!/bin/bash
 
 # Create directories
-mkdir -p routes schemas services
+mkdir -p routes controllers
 
 # Create root files
-touch main.py config.py requirements.txt
-
-# Create __init__.py where necessary
-touch routes/__init__.py
-touch schemas/__init__.py
-touch services/__init__.py
+touch server.js db.js .env
 
 # Create module files
-touch routes/user_routes.py
-touch schemas/user_schema.py
-touch services/user_service.py
+touch routes/auth.js
+touch controllers/authController.js
 
 echo "✅ Backend structure created successfully!"

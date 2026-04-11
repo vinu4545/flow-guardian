@@ -24,7 +24,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleGoogleSignIn = async () => {
@@ -73,11 +73,30 @@ export default function AuthPage() {
         navigate("/dashboard");
       }
     } else {
-      const { error } = await signUp(email, password);
-      if (error) {
-        setError(error.message);
-      } else {
-        setSuccessMsg("Check your email for a confirmation link!");
+      try {
+        const res = await fetch("http://localhost:5000/api/auth/signup", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fullName,
+            email,
+            phone,
+            password,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError(data.error || "Signup failed");
+        } else {
+          setSuccessMsg("Account created successfully!");
+          setIsLogin(true);
+        }
+      } catch {
+        setError("Server not reachable");
       }
     }
     setLoading(false);
