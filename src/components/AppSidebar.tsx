@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
-import { useAuth } from "@/hooks/useAuth";
+import { logout } from "@/utils/auth";
 
 const navItems = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -20,7 +20,6 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
 
   return (
     <motion.aside
@@ -76,7 +75,7 @@ export function AppSidebar() {
         <div className="flex items-center gap-1">
           <ThemeToggle />
           <button
-            onClick={async () => { await signOut(); navigate("/auth"); }}
+            onClick={() => { logout(); navigate("/auth"); }}
             className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
             title="Sign out"
           >

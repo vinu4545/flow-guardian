@@ -2,7 +2,6 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { ShieldCheck, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, Phone, User } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +23,6 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
-  const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleGoogleSignIn = async () => {
@@ -66,11 +64,31 @@ export default function AuthPage() {
     }
 
     if (isLogin) {
-      const { error } = await signIn(email, password);
-      if (error) {
-        setError(error.message);
-      } else {
-        navigate("/dashboard");
+      try {
+        const res = await fetch("http://localhost:5000/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError(data.error || "Login failed");
+        } else {
+          // ✅ store token
+          localStorage.setItem("token", data.token);
+
+          // optional: store user
+          localStorage.setItem("user", JSON.stringify(data.user));
+
+          navigate("/dashboard");
+        }
+
+      } catch {
+        setError("Server not reachable");
       }
     } else {
       try {

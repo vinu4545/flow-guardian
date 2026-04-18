@@ -4,8 +4,20 @@ import authRoutes from "./routes/auth.js";
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:8080",
+  "http://127.0.0.1:8080",
+];
+
 app.use(cors({
-  origin: "http://localhost:8080", // your Vite frontend
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS origin not allowed"));
+    }
+  },
+  credentials: true,
 }));
 app.use(express.json());
 
