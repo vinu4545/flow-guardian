@@ -2,17 +2,24 @@ import { pool } from "../db.js";
 
 export const detectCircularTransactions = async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM transactions");
+    const result = await pool.query(`
+      SELECT t.*, 
+             a1.account_number AS from_acc,
+             a2.account_number AS to_acc
+      FROM transactions t
+      JOIN accounts a1 ON t.from_account = a1.id
+      JOIN accounts a2 ON t.to_account = a2.id
+    `);
     const transactions = result.rows;
 
     const graph = {};
 
     // Build adjacency list
     transactions.forEach(tx => {
-      if (!graph[tx.from_account]) {
-        graph[tx.from_account] = [];
+      if (!graph[tx.from_acc]) {
+        graph[tx.from_acc] = [];
       }
-      graph[tx.from_account].push(tx.to_account);
+      graph[tx.from_acc].push(tx.to_acc);
     });
 
     const visited = new Set();
@@ -41,7 +48,7 @@ export const detectCircularTransactions = async (req, res) => {
     }
 
     Object.keys(graph).forEach(node => {
-      dfs(parseInt(node), []);
+      dfs(node, []);
     });
 
     // Store alerts
