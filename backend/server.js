@@ -4,6 +4,7 @@ import authRoutes from "./routes/auth.js";
 import accountRoutes from "./routes/accounts.js";
 import transactionRoutes from "./routes/transactions.js";
 import alertRoutes from "./routes/alerts.js";
+import detectionRoutes from "./routes/detection.js";
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/accounts", accountRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/alerts", alertRoutes);
+app.use("/api/detection", detectionRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server running");
