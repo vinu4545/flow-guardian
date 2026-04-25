@@ -4,8 +4,8 @@ export const detectCircularTransactions = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT t.*, 
-             a1.account_number AS from_acc,
-             a2.account_number AS to_acc
+             a1.account_number::text AS from_acc,
+             a2.account_number::text AS to_acc
       FROM transactions t
       JOIN accounts a1 ON t.from_account = a1.id
       JOIN accounts a2 ON t.to_account = a2.id
@@ -16,10 +16,12 @@ export const detectCircularTransactions = async (req, res) => {
 
     // Build adjacency list
     transactions.forEach(tx => {
-      if (!graph[tx.from_acc]) {
-        graph[tx.from_acc] = [];
+      const fromAcc = "ACC" + tx.from_acc;
+      const toAcc = "ACC" + tx.to_acc;
+      if (!graph[fromAcc]) {
+        graph[fromAcc] = [];
       }
-      graph[tx.from_acc].push(tx.to_acc);
+      graph[fromAcc].push(toAcc);
     });
 
     const visited = new Set();
