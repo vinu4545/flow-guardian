@@ -1,60 +1,26 @@
-// Alert Controller
-// Handles alert-related operations
+import { pool } from "../db.js";
 
-const getAlerts = (req, res) => {
+export const getAlerts = async (req, res) => {
   try {
-    // TODO: Implement get all alerts logic
-    res.status(200).json({ message: 'Get alerts' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const result = await pool.query("SELECT * FROM alerts ORDER BY created_at DESC");
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch alerts" });
   }
 };
 
-const getAlertById = (req, res) => {
+export const createAlert = async (req, res) => {
   try {
-    const { id } = req.params;
-    // TODO: Implement get alert by ID logic
-    res.status(200).json({ message: `Get alert ${id}` });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+    const { type, description, severity } = req.body;
 
-const createAlert = (req, res) => {
-  try {
-    const alertData = req.body;
-    // TODO: Implement create alert logic
-    res.status(201).json({ message: 'Alert created', data: alertData });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+    const result = await pool.query(
+      `INSERT INTO alerts (type, description, severity)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [type, description, severity]
+    );
 
-const updateAlert = (req, res) => {
-  try {
-    const { id } = req.params;
-    const alertData = req.body;
-    // TODO: Implement update alert logic
-    res.status(200).json({ message: `Alert ${id} updated`, data: alertData });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create alert" });
   }
-};
-
-const deleteAlert = (req, res) => {
-  try {
-    const { id } = req.params;
-    // TODO: Implement delete alert logic
-    res.status(200).json({ message: `Alert ${id} deleted` });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-module.exports = {
-  getAlerts,
-  getAlertById,
-  createAlert,
-  updateAlert,
-  deleteAlert,
 };

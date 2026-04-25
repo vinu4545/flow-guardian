@@ -1,6 +1,9 @@
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.js";
+import accountRoutes from "./routes/accounts.js";
+import transactionRoutes from "./routes/transactions.js";
+import alertRoutes from "./routes/alerts.js";
 
 const app = express();
 
@@ -22,6 +25,9 @@ app.use(cors({
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/accounts", accountRoutes);
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/alerts", alertRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server running");
