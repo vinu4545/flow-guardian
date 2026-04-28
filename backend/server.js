@@ -5,6 +5,7 @@ import accountRoutes from "./routes/accounts.js";
 import transactionRoutes from "./routes/transactions.js";
 import alertRoutes from "./routes/alerts.js";
 import detectionRoutes from "./routes/detection.js";
+import graphRoutes from "./routes/graphRoutes.js";
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use("/api/accounts", accountRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/alerts", alertRoutes);
 app.use("/api/detection", detectionRoutes);
+app.use("/api/graph", graphRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server running");
