@@ -49,3 +49,9 @@ export const apiService = {
     return response.json();
   },
 };
+
+export const getSuspiciousGraph = async () => {
+  const res = await fetch(`${API_BASE}/graph/suspicious`);
+  if (!res.ok) throw new Error('Failed to fetch suspicious graph');
+  return res.json();
+};

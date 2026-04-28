@@ -59,11 +59,9 @@ export const buildGraphWithRisk = (transactions, alertEdges) => {
     let risk = tx.amount > 50000 ? 0.6 : 0.2;
 
     // boost if part of alert
-    let alertType = null;
-
-    if (alertEdges.has(edgeKey)) {
+    const alertType = alertEdges.get(edgeKey) || null;
+    if (alertType) {
       risk = 0.9;
-      alertType = "suspicious_path";
     }
 
     // nodes
@@ -104,7 +102,8 @@ export const buildGraphWithRisk = (transactions, alertEdges) => {
 };
 
 export const extractAlertPaths = (alerts) => {
-  const alertEdges = new Set();
+  // return a Map of edgeKey -> alert.type
+  const alertEdges = new Map();
 
   alerts.forEach(alert => {
     const path = alert.description
@@ -113,7 +112,7 @@ export const extractAlertPaths = (alerts) => {
 
     for (let i = 0; i < path.length - 1; i++) {
       const edgeKey = `${path[i]}-${path[i + 1]}`;
-      alertEdges.add(edgeKey);
+      alertEdges.set(edgeKey, alert.type || 'suspicious_path');
     }
   });
 
