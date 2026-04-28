@@ -1,11 +1,59 @@
 import { motion } from "framer-motion";
+import { useState } from "react";
 import { pageTransition, staggerContainer, staggerItem } from "@/lib/animations";
 import { AnimatedCard } from "@/components/AnimatedCard";
 import { RiskBadge } from "@/components/RiskBadge";
 import { fraudPatterns } from "@/lib/mockData";
-import { AlertTriangle, TrendingUp } from "lucide-react";
+import { apiService, type DetectionResult } from "@/lib/api";
+import { AlertTriangle, TrendingUp, Play, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function FraudDetectionPage() {
+  const [circularResult, setCircularResult] = useState<DetectionResult | null>(null);
+  const [layeringResult, setLayeringResult] = useState<DetectionResult | null>(null);
+  const [loadingCircular, setLoadingCircular] = useState(false);
+  const [loadingLayering, setLoadingLayering] = useState(false);
+
+  const runCircularDetection = async () => {
+    setLoadingCircular(true);
+    try {
+      const result = await apiService.detectCircular();
+      setCircularResult(result);
+      toast.success(`Found ${result.cycles_found} circular patterns`);
+    } catch (error) {
+      toast.error("Failed to run circular detection");
+      console.error(error);
+    } finally {
+      setLoadingCircular(false);
+    }
+  };
+
+  const runLayeringDetection = async () => {
+    setLoadingLayering(true);
+    try {
+      const result = await apiService.detectLayering();
+      setLayeringResult(result);
+      toast.success(`Found ${result.count} layering patterns`);
+    } catch (error) {
+      toast.error("Failed to run layering detection");
+      console.error(error);
+    } finally {
+      setLoadingLayering(false);
+    }
+  };
+
+  // Update fraud patterns with real data
+  const updatedFraudPatterns = fraudPatterns.map(pattern => {
+    if (pattern.id === 'circular' && circularResult) {
+      return { ...pattern, detected: circularResult.cycles_found || 0 };
+    }
+    if (pattern.id === 'layering' && layeringResult) {
+      return { ...pattern, detected: layeringResult.count || 0 };
+    }
+    return pattern;
+  });
+
   return (
     <motion.div {...pageTransition} className="p-6 space-y-6 max-w-[1400px] mx-auto">
       <div>
@@ -15,7 +63,7 @@ export default function FraudDetectionPage() {
 
       {/* Pattern Cards */}
       <motion.div variants={staggerContainer} initial="initial" animate="animate" className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {fraudPatterns.map((p) => (
+        {updatedFraudPatterns.map((p) => (
           <motion.div key={p.id} variants={staggerItem}>
             <AnimatedCard gradientBorder={p.risk === "high"} neonGlow={p.risk === "high"} className="h-full">
               <div className="text-3xl mb-3">{p.icon}</div>
@@ -29,10 +77,111 @@ export default function FraudDetectionPage() {
                 </div>
                 <RiskBadge risk={p.risk} pulse />
               </div>
+              {/* Detection Button */}
+              <div className="mt-4">
+                {p.id === 'circular' && (
+                  <Button
+                    onClick={runCircularDetection}
+                    disabled={loadingCircular}
+                    size="sm"
+                    className="w-full"
+                    variant="outline"
+                  >
+                    {loadingCircular ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Play className="w-4 h-4 mr-2" />
+                    )}
+                    Run Detection
+                  </Button>
+                )}
+                {p.id === 'layering' && (
+                  <Button
+                    onClick={runLayeringDetection}
+                    disabled={loadingLayering}
+                    size="sm"
+                    className="w-full"
+                    variant="outline"
+                  >
+                    {loadingLayering ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Play className="w-4 h-4 mr-2" />
+                    )}
+                    Run Detection
+                  </Button>
+                )}
+              </div>
             </AnimatedCard>
           </motion.div>
         ))}
       </motion.div>
+
+      {/* Detection Results */}
+      {(circularResult || layeringResult) && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Circular Detection Results */}
+          {circularResult && (
+            <AnimatedCard>
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+                <h3 className="font-display font-semibold text-foreground">Circular Detection Results</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <span className="text-sm font-medium">Cycles Found</span>
+                  <span className="text-lg font-bold text-destructive">{circularResult.cycles_found}</span>
+                </div>
+                {circularResult.cycles && circularResult.cycles.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">Detected Cycles:</h4>
+                    {circularResult.cycles.map((cycle, i) => (
+                      <div key={i} className="p-3 bg-muted/30 rounded border-l-4 border-destructive">
+                        <div className="font-mono text-sm text-foreground">
+                          {cycle.join(" → ")}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </AnimatedCard>
+          )}
+
+          {/* Layering Detection Results */}
+          {layeringResult && (
+            <AnimatedCard>
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-5 h-5 text-warning" />
+                <h3 className="font-display font-semibold text-foreground">Layering Detection Results</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <span className="text-sm font-medium">Paths Found</span>
+                  <span className="text-lg font-bold text-warning">{layeringResult.count}</span>
+                </div>
+                {layeringResult.paths && layeringResult.paths.length > 0 && (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    <h4 className="text-sm font-medium text-muted-foreground">Detected Paths:</h4>
+                    {layeringResult.paths.slice(0, 5).map((path, i) => (
+                      <div key={i} className="p-3 bg-muted/30 rounded border-l-4 border-warning">
+                        <div className="font-mono text-sm text-foreground">
+                          {path.join(" → ")}
+                        </div>
+                      </div>
+                    ))}
+                    {layeringResult.paths.length > 5 && (
+                      <div className="text-xs text-muted-foreground text-center py-2">
+                        ... and {layeringResult.paths.length - 5} more paths
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </AnimatedCard>
+          )}
+        </div>
+      )}
 
       {/* Timeline */}
       <AnimatedCard>
