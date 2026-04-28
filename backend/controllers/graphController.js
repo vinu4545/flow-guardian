@@ -1,5 +1,5 @@
 import { pool } from "../db/db.js";
-import { buildGraph } from "../services/graphService.js";
+import { buildGraph, buildGraphWithRisk, extractAlertPaths } from "../services/graphService.js";
 
 const graphSelectClause = `
   SELECT t.id,
@@ -73,6 +73,7 @@ export const getGraphByAccount = async (req, res) => {
 
 export const getSuspiciousGraph = async (req, res) => {
   try {
+    // Fetch transactions with high amounts
     const result = await pool.query(`
       ${graphSelectClause}
       WHERE t.amount > 50000
@@ -80,7 +81,15 @@ export const getSuspiciousGraph = async (req, res) => {
       LIMIT 100;
     `);
 
-    const graph = buildGraph(result.rows);
+    // Fetch alerts and extract paths
+    const alertsResult = await pool.query(`SELECT * FROM alerts`);
+    const alertEdges = extractAlertPaths(alertsResult.rows);
+
+    // Build graph with risk scoring
+    const graph = buildGraphWithRisk(result.rows, alertEdges);
+
+    // Filter only high-risk edges (risk_score > 0.7)
+    graph.edges = graph.edges.filter(e => e.risk_score > 0.7);
 
     res.json(graph);
   } catch (err) {

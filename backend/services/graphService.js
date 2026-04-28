@@ -44,3 +44,78 @@ export const buildGraph = (transactions) => {
     edges
   };
 };
+
+export const buildGraphWithRisk = (transactions, alertEdges) => {
+  const nodesMap = new Map();
+  const edges = [];
+
+  transactions.forEach(tx => {
+    const source = tx.from_acc;
+    const target = tx.to_acc;
+
+    const edgeKey = `${source}-${target}`;
+
+    // base risk from amount
+    let risk = tx.amount > 50000 ? 0.6 : 0.2;
+
+    // boost if part of alert
+    let alertType = null;
+
+    if (alertEdges.has(edgeKey)) {
+      risk = 0.9;
+      alertType = "suspicious_path";
+    }
+
+    // nodes
+    if (!nodesMap.has(source)) {
+      nodesMap.set(source, {
+        id: source,
+        label: source,
+        holder_name: tx.from_holder_name || null,
+        type: "account"
+      });
+    }
+
+    if (!nodesMap.has(target)) {
+      nodesMap.set(target, {
+        id: target,
+        label: target,
+        holder_name: tx.to_holder_name || null,
+        type: "account"
+      });
+    }
+
+    edges.push({
+      id: tx.id,
+      source,
+      target,
+      amount: tx.amount,
+      timestamp: tx.timestamp,
+      risk_score: risk,
+      alert: alertType,
+      isSuspicious: alertEdges.has(edgeKey)
+    });
+  });
+
+  return {
+    nodes: Array.from(nodesMap.values()),
+    edges
+  };
+};
+
+export const extractAlertPaths = (alerts) => {
+  const alertEdges = new Set();
+
+  alerts.forEach(alert => {
+    const path = alert.description
+      .split("→")
+      .map(s => s.trim());
+
+    for (let i = 0; i < path.length - 1; i++) {
+      const edgeKey = `${path[i]}-${path[i + 1]}`;
+      alertEdges.add(edgeKey);
+    }
+  });
+
+  return alertEdges;
+};
